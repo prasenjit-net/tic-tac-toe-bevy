@@ -12,27 +12,7 @@ permissions:
 jobs:
   build:
     name: Build / Test / Lint
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # For main branch pushes: build on all platforms
-          - os: ubuntu-latest
-            name: Linux
-            if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-          - os: windows-latest
-            name: Windows
-            if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-          - os: macos-latest
-            name: macOS
-            if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-          # For pull requests: only build on Linux
-          - os: ubuntu-latest
-            name: Linux
-            if: github.event_name == 'pull_request'
-
-    runs-on: ${{ matrix.os }}
-    if: ${{ matrix.if }}
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
