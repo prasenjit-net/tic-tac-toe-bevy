@@ -2,7 +2,7 @@ name: Rust CI
 
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
     branches: ["**"]
 
@@ -12,7 +12,27 @@ permissions:
 jobs:
   build:
     name: Build / Test / Lint
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # For main branch pushes: build on all platforms
+          - os: ubuntu-latest
+            name: Linux
+            if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          - os: windows-latest
+            name: Windows
+            if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          - os: macos-latest
+            name: macOS
+            if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+          # For pull requests: only build on Linux
+          - os: ubuntu-latest
+            name: Linux
+            if: github.event_name == 'pull_request'
+
+    runs-on: ${{ matrix.os }}
+    if: ${{ matrix.if }}
 
     steps:
       - name: Checkout
@@ -31,6 +51,7 @@ jobs:
           cache-all-crates: true
 
       - name: Install Linux deps for Bevy wgpu
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
