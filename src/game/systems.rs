@@ -27,16 +27,7 @@ pub fn spawn_grid(mut commands: Commands) {
         ));
     }
 
-    for row in 0..BOARD_SIZE {
-        for col in 0..BOARD_SIZE {
-            let center = cell_center(row, col);
-            commands.spawn((
-                Cell { row, col },
-                Sprite::from_color(Color::NONE, Vec2::splat(CELL_SIZE)),
-                Transform::from_translation(Vec3::new(center.x, center.y, -1.0)),
-            ));
-        }
-    }
+    // No need to spawn per-cell entities; clicks are mapped to board indices by math.
 }
 
 pub fn handle_clicks(
@@ -164,9 +155,9 @@ fn spawn_o(commands: &mut Commands, center: Vec2) {
 
 fn check_winner(board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE]) -> Option<WinningLine> {
     // rows
-    for r in 0..BOARD_SIZE {
-        if let Some(p) = board[r][0] {
-            if (1..BOARD_SIZE).all(|c| board[r][c] == Some(p)) {
+    for (r, row) in board.iter().enumerate() {
+        if let Some(p) = row[0] {
+            if row.iter().skip(1).all(|&cell| cell == Some(p)) {
                 return Some(WinningLine { start: UVec2::new(0, r as u32), end: UVec2::new((BOARD_SIZE - 1) as u32, r as u32) });
             }
         }
@@ -174,7 +165,7 @@ fn check_winner(board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE]) -> Option<Wi
     // cols
     for c in 0..BOARD_SIZE {
         if let Some(p) = board[0][c] {
-            if (1..BOARD_SIZE).all(|r| board[r][c] == Some(p)) {
+            if board.iter().skip(1).all(|row| row[c] == Some(p)) {
                 return Some(WinningLine { start: UVec2::new(c as u32, 0), end: UVec2::new(c as u32, (BOARD_SIZE - 1) as u32) });
             }
         }

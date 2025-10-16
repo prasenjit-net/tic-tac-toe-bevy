@@ -5,9 +5,6 @@ mod components;
 mod systems;
 mod utils;
 
-pub use state::*;
-pub use components::*;
-
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {

@@ -17,6 +17,6 @@ pub fn world_cursor_pos(
 ) -> Option<Vec2> {
     let window = windows.single().ok()?;
     let (camera, cam_transform) = camera_q.single().ok()?;
-    let Some(cursor) = window.cursor_position() else { return None };
+    let cursor = window.cursor_position()?;
     camera.viewport_to_world_2d(cam_transform, cursor).ok()
 }
