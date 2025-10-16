@@ -11,7 +11,11 @@ pub const O_COLOR: Color = Color::srgb(0.2, 0.6, 0.95);
 pub const WIN_COLOR: Color = Color::srgb(0.2, 0.95, 0.4);
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
-pub enum Player { #[default] X, O }
+pub enum Player {
+    #[default]
+    X,
+    O,
+}
 
 #[derive(Resource, Default)]
 pub struct GameState {
@@ -23,4 +27,7 @@ pub struct GameState {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct WinningLine { pub start: UVec2, pub end: UVec2 }
+pub struct WinningLine {
+    pub start: UVec2,
+    pub end: UVec2,
+}

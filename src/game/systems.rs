@@ -15,13 +15,19 @@ pub fn spawn_grid(mut commands: Commands) {
         let offset = i as f32 * CELL_SIZE - half;
         // vertical line at x = offset
         commands.spawn((
-            Sprite::from_color(GRID_COLOR, Vec2::new(LINE_THICKNESS, board_px + LINE_THICKNESS)),
+            Sprite::from_color(
+                GRID_COLOR,
+                Vec2::new(LINE_THICKNESS, board_px + LINE_THICKNESS),
+            ),
             Transform::from_translation(Vec3::new(offset, 0.0, 0.0)),
             Grid,
         ));
         // horizontal line at y = offset
         commands.spawn((
-            Sprite::from_color(GRID_COLOR, Vec2::new(board_px + LINE_THICKNESS, LINE_THICKNESS)),
+            Sprite::from_color(
+                GRID_COLOR,
+                Vec2::new(board_px + LINE_THICKNESS, LINE_THICKNESS),
+            ),
             Transform::from_translation(Vec3::new(0.0, offset, 0.0)),
             Grid,
         ));
@@ -36,20 +42,30 @@ pub fn handle_clicks(
     windows: Query<&Window>,
     camera_q: Query<(&Camera, &GlobalTransform)>,
 ) {
-    if !buttons.just_pressed(MouseButton::Left) { return; }
-    if state.winner.is_some() { return; }
+    if !buttons.just_pressed(MouseButton::Left) {
+        return;
+    }
+    if state.winner.is_some() {
+        return;
+    }
 
-    let Some(cursor_world) = world_cursor_pos(windows, camera_q) else { return };
+    let Some(cursor_world) = world_cursor_pos(windows, camera_q) else {
+        return;
+    };
 
     let board_px = CELL_SIZE * BOARD_SIZE as f32;
     let half = board_px / 2.0;
     let x = cursor_world.x + half;
     let y = cursor_world.y + half;
-    if x < 0.0 || y < 0.0 || x >= board_px || y >= board_px { return; }
+    if x < 0.0 || y < 0.0 || x >= board_px || y >= board_px {
+        return;
+    }
     let col = (x / CELL_SIZE).floor() as usize;
     let row = (y / CELL_SIZE).floor() as usize;
 
-    if state.board[row][col].is_some() { return; }
+    if state.board[row][col].is_some() {
+        return;
+    }
 
     let player = state.turn;
     state.board[row][col] = Some(player);
@@ -61,7 +77,10 @@ pub fn handle_clicks(
     } else if state.moves == BOARD_SIZE * BOARD_SIZE {
         state.winner = None;
     } else {
-        state.turn = match state.turn { Player::X => Player::O, Player::O => Player::X };
+        state.turn = match state.turn {
+            Player::X => Player::O,
+            Player::O => Player::X,
+        };
     }
 }
 
@@ -70,8 +89,12 @@ pub fn draw_marks(
     mut marks: Query<(Entity, &mut Sprite, &mut Transform), With<Mark>>,
     state: Res<GameState>,
 ) {
-    if !state.is_changed() { return; }
-    for (e, _, _) in marks.iter_mut() { commands.entity(e).despawn(); }
+    if !state.is_changed() {
+        return;
+    }
+    for (e, _, _) in marks.iter_mut() {
+        commands.entity(e).despawn();
+    }
 
     for row in 0..BOARD_SIZE {
         for col in 0..BOARD_SIZE {
@@ -91,7 +114,9 @@ pub fn draw_win_highlight(
     mut existing: Query<(Entity, &mut Sprite), With<WinHighlight>>,
     state: Res<GameState>,
 ) {
-    for (e, _) in existing.iter_mut() { commands.entity(e).despawn(); }
+    for (e, _) in existing.iter_mut() {
+        commands.entity(e).despawn();
+    }
 
     if let Some(line) = state.winning_line {
         let (start, end) = (line.start, line.end);
@@ -103,7 +128,8 @@ pub fn draw_win_highlight(
         let mid = (start_center + end_center) * 0.5;
         commands.spawn((
             Sprite::from_color(WIN_COLOR, Vec2::new(length, LINE_THICKNESS * 2.0)),
-            Transform::from_translation(Vec3::new(mid.x, mid.y, 1.0)).with_rotation(Quat::from_rotation_z(angle)),
+            Transform::from_translation(Vec3::new(mid.x, mid.y, 1.0))
+                .with_rotation(Quat::from_rotation_z(angle)),
             WinHighlight,
         ));
     }
@@ -116,10 +142,16 @@ pub fn keyboard_reset(
     mut marks: Query<Entity, With<Mark>>,
     mut wins: Query<Entity, With<WinHighlight>>,
 ) {
-    if !(keys.just_pressed(KeyCode::KeyR) || keys.just_pressed(KeyCode::Escape)) { return; }
+    if !(keys.just_pressed(KeyCode::KeyR) || keys.just_pressed(KeyCode::Escape)) {
+        return;
+    }
 
-    for e in marks.iter_mut() { commands.entity(e).despawn(); }
-    for e in wins.iter_mut() { commands.entity(e).despawn(); }
+    for e in marks.iter_mut() {
+        commands.entity(e).despawn();
+    }
+    for e in wins.iter_mut() {
+        commands.entity(e).despawn();
+    }
 
     *state = GameState::default();
 }
@@ -132,7 +164,8 @@ fn spawn_x(commands: &mut Commands, center: Vec2) {
         commands.spawn((
             Mark,
             Sprite::from_color(X_COLOR, Vec2::new(len, thickness)),
-            Transform::from_translation(Vec3::new(center.x, center.y, z)).with_rotation(Quat::from_rotation_z(angle)),
+            Transform::from_translation(Vec3::new(center.x, center.y, z))
+                .with_rotation(Quat::from_rotation_z(angle)),
         ));
     }
 }
@@ -158,7 +191,10 @@ fn check_winner(board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE]) -> Option<Wi
     for (r, row) in board.iter().enumerate() {
         if let Some(p) = row[0] {
             if row.iter().skip(1).all(|&cell| cell == Some(p)) {
-                return Some(WinningLine { start: UVec2::new(0, r as u32), end: UVec2::new((BOARD_SIZE - 1) as u32, r as u32) });
+                return Some(WinningLine {
+                    start: UVec2::new(0, r as u32),
+                    end: UVec2::new((BOARD_SIZE - 1) as u32, r as u32),
+                });
             }
         }
     }
@@ -166,20 +202,29 @@ fn check_winner(board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE]) -> Option<Wi
     for c in 0..BOARD_SIZE {
         if let Some(p) = board[0][c] {
             if board.iter().skip(1).all(|row| row[c] == Some(p)) {
-                return Some(WinningLine { start: UVec2::new(c as u32, 0), end: UVec2::new(c as u32, (BOARD_SIZE - 1) as u32) });
+                return Some(WinningLine {
+                    start: UVec2::new(c as u32, 0),
+                    end: UVec2::new(c as u32, (BOARD_SIZE - 1) as u32),
+                });
             }
         }
     }
     // diag \
     if let Some(p) = board[0][0] {
         if (1..BOARD_SIZE).all(|i| board[i][i] == Some(p)) {
-            return Some(WinningLine { start: UVec2::new(0, 0), end: UVec2::new((BOARD_SIZE - 1) as u32, (BOARD_SIZE - 1) as u32) });
+            return Some(WinningLine {
+                start: UVec2::new(0, 0),
+                end: UVec2::new((BOARD_SIZE - 1) as u32, (BOARD_SIZE - 1) as u32),
+            });
         }
     }
     // diag /
     if let Some(p) = board[0][BOARD_SIZE - 1] {
         if (1..BOARD_SIZE).all(|i| board[i][BOARD_SIZE - 1 - i] == Some(p)) {
-            return Some(WinningLine { start: UVec2::new((BOARD_SIZE - 1) as u32, 0), end: UVec2::new(0, (BOARD_SIZE - 1) as u32) });
+            return Some(WinningLine {
+                start: UVec2::new((BOARD_SIZE - 1) as u32, 0),
+                end: UVec2::new(0, (BOARD_SIZE - 1) as u32),
+            });
         }
     }
     None
