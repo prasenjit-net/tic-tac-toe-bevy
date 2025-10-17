@@ -37,7 +37,7 @@ impl Plugin for GamePlugin {
                     systems::computer_player,
                     systems::draw_marks,
                     systems::draw_win_highlight,
-                    systems::update_score,
+                    systems::update_score.before(systems::update_scoreboard),
                     systems::update_scoreboard,
                     systems::show_game_over_ui,
                     systems::handle_game_over_buttons,

@@ -16,6 +16,9 @@ pub struct MenuUI;
 pub struct ScoreboardUI;
 
 #[derive(Component)]
+pub struct ScoreText;
+
+#[derive(Component)]
 pub struct GameOverUI;
 
 #[derive(Component)]

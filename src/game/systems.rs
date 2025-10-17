@@ -177,7 +177,7 @@ pub fn cleanup_menu(mut commands: Commands, query: Query<Entity, With<MenuUI>>) 
 
 // ===== SCOREBOARD SYSTEMS =====
 
-pub fn spawn_scoreboard(mut commands: Commands, player_config: Res<PlayerConfig>) {
+pub fn spawn_scoreboard(mut commands: Commands, player_config: Res<PlayerConfig>, score: Res<Score>) {
     commands
         .spawn((
             Node {
@@ -215,24 +215,40 @@ pub fn spawn_scoreboard(mut commands: Commands, player_config: Res<PlayerConfig>
             parent.spawn((
                 Text::new(""),
                 TextFont {
-                    font_size: 16.0,
+                    font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::WHITE),
+                TextColor(Color::srgb(0.7, 0.7, 0.7)),
                 Node {
                     margin: UiRect::top(Val::Px(10.0)),
                     ..default()
                 },
             ));
+            parent.spawn((
+                Text::new(format!(
+                    "X Wins: {} | O Wins: {} | Draws: {}",
+                    score.x_wins, score.o_wins, score.draws
+                )),
+                TextFont {
+                    font_size: 16.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                Node {
+                    margin: UiRect::top(Val::Px(5.0)),
+                    ..default()
+                },
+                ScoreText,
+            ));
         });
 }
 
-pub fn update_scoreboard(score: Res<Score>, mut query: Query<&mut Text, With<ScoreboardUI>>) {
+pub fn update_scoreboard(score: Res<Score>, mut query: Query<&mut Text, With<ScoreText>>) {
     if !score.is_changed() {
         return;
     }
 
-    for mut text in query.iter_mut().skip(2) {
+    for mut text in query.iter_mut() {
         **text = format!(
             "X Wins: {} | O Wins: {} | Draws: {}",
             score.x_wins, score.o_wins, score.draws
