@@ -20,6 +20,12 @@ This directory contains all documentation for the Tic-Tac-Toe Bevy project.
 - **[ENHANCEMENT_UNIFIED_MESH_RENDERING.md](ENHANCEMENT_UNIFIED_MESH_RENDERING.md)** - Unified mesh-based rendering for X and O
 - **[SCORE_DISPLAY_ENHANCEMENT.md](SCORE_DISPLAY_ENHANCEMENT.md)** - Running score display implementation
 
+## 🎨 Visual Upgrades
+
+- **[VISUAL_UPGRADE_PLAN.md](VISUAL_UPGRADE_PLAN.md)** - Visual upgrade design plan and strategy
+- **[VISUAL_UPGRADE_COMPLETE.md](VISUAL_UPGRADE_COMPLETE.md)** - Comprehensive visual upgrade documentation
+- **[VISUAL_UPGRADE_SUMMARY.md](VISUAL_UPGRADE_SUMMARY.md)** - Quick summary of visual improvements
+
 ## 🔧 Code Quality
 
 - **[CLIPPY_LINT_FIXES.md](CLIPPY_LINT_FIXES.md)** - Clippy lint warnings resolution
@@ -43,6 +49,7 @@ All documentation files are organized in this `doc/` directory. The main `README
 doc/
 ├── BUG_FIX_*.md              # Bug fix documentation
 ├── ENHANCEMENT_*.md           # Feature enhancements
+├── VISUAL_UPGRADE_*.md       # Visual design documentation
 ├── REFACTORING_*.md          # Code refactoring docs
 ├── MANUAL_RELEASE_*.md       # Release workflow docs
 ├── CLIPPY_LINT_FIXES.md     # Code quality improvements
@@ -77,6 +84,7 @@ When creating new documentation:
 4. **Follow categories**:
    - `BUG_FIX_*` - Bug fix documentation
    - `ENHANCEMENT_*` - Feature enhancements
+   - `VISUAL_UPGRADE_*` - Visual design documentation
    - `REFACTORING_*` - Code refactoring
    - `MANUAL_*` - Manual processes/workflows
    - Standalone names for other docs
