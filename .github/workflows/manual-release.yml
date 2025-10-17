@@ -1,0 +1,270 @@
+name: Manual Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+      custom_version:
+        description: 'Custom version (optional, overrides bump type if provided)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag-and-release:
+    name: Create Tag and Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "current=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT_VERSION"
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT="${{ steps.current_version.outputs.current }}"
+          
+          # If custom version provided, use it
+          if [ -n "${{ github.event.inputs.custom_version }}" ]; then
+            NEW_VERSION="${{ github.event.inputs.custom_version }}"
+            echo "Using custom version: $NEW_VERSION"
+          else
+            # Parse current version
+            IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT"
+            MAJOR="${VERSION_PARTS[0]}"
+            MINOR="${VERSION_PARTS[1]}"
+            PATCH="${VERSION_PARTS[2]}"
+            
+            # Bump version based on input
+            case "${{ github.event.inputs.version_bump }}" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+            
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            echo "Bumped ${{ github.event.inputs.version_bump }} version: $NEW_VERSION"
+          fi
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update Cargo.toml version
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.version }}"
+          sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
+          
+          echo "Updated Cargo.toml:"
+          grep '^version = ' Cargo.toml | head -1
+
+      - name: Update Cargo.lock
+        run: |
+          # Install Rust if not present
+          if ! command -v cargo &> /dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+          fi
+          
+          # Update Cargo.lock
+          cargo update -p tic-tac-toe --precise ${{ steps.new_version.outputs.version }}
+
+      - name: Commit version bump
+        run: |
+          git add Cargo.toml Cargo.lock
+          git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}"
+
+      - name: Create and push tag
+        run: |
+          TAG="${{ steps.new_version.outputs.tag }}"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin main
+          git push origin "$TAG"
+          echo "Created and pushed tag: $TAG"
+
+      - name: Wait for release workflow
+        run: |
+          echo "Tag ${{ steps.new_version.outputs.tag }} has been pushed."
+          echo "The Release workflow will automatically trigger and create the release."
+          echo ""
+          echo "Version bumped from ${{ steps.current_version.outputs.current }} to ${{ steps.new_version.outputs.version }}"
+          echo "Release tag: ${{ steps.new_version.outputs.tag }}"
+
+  build-release:
+    name: Build Release Binaries
+    needs: create-tag-and-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary-suffix: ''
+            artifact-name: tic-tac-toe-linux-x86_64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary-suffix: .exe
+            artifact-name: tic-tac-toe-windows-x86_64.exe
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary-suffix: ''
+            artifact-name: tic-tac-toe-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            binary-suffix: ''
+            artifact-name: tic-tac-toe-macos-aarch64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: ${{ matrix.target }}
+          override: true
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-all-crates: true
+          key: ${{ matrix.target }}
+
+      - name: Install Linux deps for Bevy
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libasound2-dev libudev-dev pkg-config libxkbcommon-dev libwayland-dev libx11-dev libxcursor-dev \
+            libxi-dev libxrandr-dev libxinerama-dev
+
+      - name: Build release binary
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Prepare binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cp target/${{ matrix.target }}/release/tic-tac-toe${{ matrix.binary-suffix }} ${{ matrix.artifact-name }}
+          chmod +x ${{ matrix.artifact-name }}
+
+      - name: Prepare binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          copy target\${{ matrix.target }}\release\tic-tac-toe${{ matrix.binary-suffix }} ${{ matrix.artifact-name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}
+          if-no-files-found: error
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Get new tag
+        id: get_tag
+        run: |
+          # Get the latest tag
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag: $LATEST_TAG"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREV_TAG=$(git tag --sort=-version:refname | sed -n '2p')
+          CURRENT_TAG=${{ steps.get_tag.outputs.tag }}
+          
+          echo "Previous tag: $PREV_TAG"
+          echo "Current tag: $CURRENT_TAG"
+          
+          # Generate changelog
+          if [ -z "$PREV_TAG" ]; then
+            CHANGELOG="## What's Changed\n\nInitial release\n\n"
+            CHANGELOG+="### Commits\n\n"
+            CHANGELOG+=$(git log --pretty=format:"- %s (%h)" | head -20)
+          else
+            CHANGELOG="## What's Changed\n\n"
+            CHANGELOG+=$(git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s (%h)" --reverse)
+          fi
+          
+          # Save to file
+          echo -e "$CHANGELOG" > CHANGELOG.md
+          
+          # Also save as output for release notes
+          {
+            echo 'changelog<<EOF'
+            cat CHANGELOG.md
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          files: |
+            artifacts/tic-tac-toe-linux-x86_64/tic-tac-toe-linux-x86_64
+            artifacts/tic-tac-toe-windows-x86_64.exe/tic-tac-toe-windows-x86_64.exe
+            artifacts/tic-tac-toe-macos-x86_64/tic-tac-toe-macos-x86_64
+            artifacts/tic-tac-toe-macos-aarch64/tic-tac-toe-macos-aarch64
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
