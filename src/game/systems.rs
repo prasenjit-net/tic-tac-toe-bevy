@@ -276,12 +276,20 @@ pub fn handle_clicks(
     windows: Query<&Window>,
     camera_q: Query<(&Camera, &GlobalTransform)>,
     player_config: Res<PlayerConfig>,
+    interaction_query: Query<&Interaction, With<Button>>,
 ) {
     if !buttons.just_pressed(MouseButton::Left) {
         return;
     }
     if state.winner.is_some() {
         return;
+    }
+
+    // Don't process board clicks if interacting with any UI button
+    for interaction in &interaction_query {
+        if *interaction == Interaction::Pressed || *interaction == Interaction::Hovered {
+            return;
+        }
     }
 
     // Check if it's a human player's turn
