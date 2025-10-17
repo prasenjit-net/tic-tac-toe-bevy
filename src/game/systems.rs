@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use rand::Rng;
 
 use super::components::*;
 use super::state::*;
@@ -7,6 +8,239 @@ use super::utils::*;
 pub fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
+
+// ===== MENU SYSTEMS =====
+
+pub fn spawn_menu(mut commands: Commands) {
+    let button_style = Node {
+        width: Val::Px(300.0),
+        height: Val::Px(60.0),
+        margin: UiRect::all(Val::Px(10.0)),
+        justify_content: JustifyContent::Center,
+        align_items: AlignItems::Center,
+        ..default()
+    };
+
+    let text_style = TextFont {
+        font_size: 20.0,
+        ..default()
+    };
+
+    commands
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.8)),
+            MenuUI,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new("Tic-Tac-Toe"),
+                TextFont {
+                    font_size: 60.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                Node {
+                    margin: UiRect::all(Val::Px(30.0)),
+                    ..default()
+                },
+            ));
+
+            parent.spawn((
+                Text::new("Choose Players:"),
+                TextFont {
+                    font_size: 30.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                Node {
+                    margin: UiRect::bottom(Val::Px(20.0)),
+                    ..default()
+                },
+            ));
+
+            // Human vs Human
+            parent
+                .spawn((
+                    Button,
+                    button_style.clone(),
+                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    MenuButton {
+                        x_type: PlayerType::Human,
+                        o_type: PlayerType::Human,
+                    },
+                ))
+                .with_children(|p| {
+                    p.spawn((
+                        Text::new("Human vs Human"),
+                        text_style.clone(),
+                        TextColor(Color::WHITE),
+                    ));
+                });
+
+            // Human vs Computer Easy
+            parent
+                .spawn((
+                    Button,
+                    button_style.clone(),
+                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    MenuButton {
+                        x_type: PlayerType::Human,
+                        o_type: PlayerType::ComputerEasy,
+                    },
+                ))
+                .with_children(|p| {
+                    p.spawn((
+                        Text::new("Human vs Computer (Easy)"),
+                        text_style.clone(),
+                        TextColor(Color::WHITE),
+                    ));
+                });
+
+            // Human vs Computer Hard
+            parent
+                .spawn((
+                    Button,
+                    button_style.clone(),
+                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    MenuButton {
+                        x_type: PlayerType::Human,
+                        o_type: PlayerType::ComputerHard,
+                    },
+                ))
+                .with_children(|p| {
+                    p.spawn((
+                        Text::new("Human vs Computer (Hard)"),
+                        text_style.clone(),
+                        TextColor(Color::WHITE),
+                    ));
+                });
+
+            // Computer vs Computer
+            parent
+                .spawn((
+                    Button,
+                    button_style,
+                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    MenuButton {
+                        x_type: PlayerType::ComputerEasy,
+                        o_type: PlayerType::ComputerHard,
+                    },
+                ))
+                .with_children(|p| {
+                    p.spawn((
+                        Text::new("Computer vs Computer"),
+                        text_style,
+                        TextColor(Color::WHITE),
+                    ));
+                });
+        });
+}
+
+pub fn handle_menu_buttons(
+    mut interaction_query: Query<
+        (&Interaction, &MenuButton, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut player_config: ResMut<PlayerConfig>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    for (interaction, menu_button, mut bg_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                player_config.x_type = menu_button.x_type;
+                player_config.o_type = menu_button.o_type;
+                next_state.set(AppState::Playing);
+            }
+            Interaction::Hovered => {
+                *bg_color = BackgroundColor(Color::srgb(0.3, 0.3, 0.4));
+            }
+            Interaction::None => {
+                *bg_color = BackgroundColor(Color::srgb(0.2, 0.2, 0.3));
+            }
+        }
+    }
+}
+
+pub fn cleanup_menu(mut commands: Commands, query: Query<Entity, With<MenuUI>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+}
+
+// ===== SCOREBOARD SYSTEMS =====
+
+pub fn spawn_scoreboard(mut commands: Commands, player_config: Res<PlayerConfig>) {
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(10.0),
+                left: Val::Px(10.0),
+                padding: UiRect::all(Val::Px(15.0)),
+                flex_direction: FlexDirection::Column,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
+            ScoreboardUI,
+        ))
+        .with_children(|parent| {
+            parent.spawn((
+                Text::new(format!("Player X: {}", player_config.x_type.label())),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(X_COLOR),
+            ));
+            parent.spawn((
+                Text::new(format!("Player O: {}", player_config.o_type.label())),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(O_COLOR),
+                Node {
+                    margin: UiRect::top(Val::Px(5.0)),
+                    ..default()
+                },
+            ));
+            parent.spawn((
+                Text::new(""),
+                TextFont {
+                    font_size: 16.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                Node {
+                    margin: UiRect::top(Val::Px(10.0)),
+                    ..default()
+                },
+            ));
+        });
+}
+
+pub fn update_scoreboard(score: Res<Score>, mut query: Query<&mut Text, With<ScoreboardUI>>) {
+    if !score.is_changed() {
+        return;
+    }
+
+    for mut text in query.iter_mut().skip(2) {
+        **text = format!(
+            "X Wins: {} | O Wins: {} | Draws: {}",
+            score.x_wins, score.o_wins, score.draws
+        );
+    }
+}
+
+// ===== GAME SYSTEMS =====
 
 pub fn spawn_grid(mut commands: Commands) {
     let board_px = CELL_SIZE * BOARD_SIZE as f32;
@@ -41,11 +275,22 @@ pub fn handle_clicks(
     mut state: ResMut<GameState>,
     windows: Query<&Window>,
     camera_q: Query<(&Camera, &GlobalTransform)>,
+    player_config: Res<PlayerConfig>,
 ) {
     if !buttons.just_pressed(MouseButton::Left) {
         return;
     }
     if state.winner.is_some() {
+        return;
+    }
+
+    // Check if it's a human player's turn
+    let current_player_type = match state.turn {
+        Player::X => player_config.x_type,
+        Player::O => player_config.o_type,
+    };
+
+    if current_player_type != PlayerType::Human {
         return;
     }
 
@@ -67,6 +312,128 @@ pub fn handle_clicks(
         return;
     }
 
+    make_move(&mut state, row, col);
+}
+
+// ===== AI SYSTEMS =====
+
+pub fn computer_player(
+    time: Res<Time>,
+    mut timer: ResMut<ComputerMoveTimer>,
+    mut state: ResMut<GameState>,
+    player_config: Res<PlayerConfig>,
+) {
+    if state.winner.is_some() {
+        return;
+    }
+
+    let current_player_type = match state.turn {
+        Player::X => player_config.x_type,
+        Player::O => player_config.o_type,
+    };
+
+    if current_player_type == PlayerType::Human {
+        timer.timer.reset();
+        return;
+    }
+
+    timer.timer.tick(time.delta());
+
+    if !timer.timer.is_finished() {
+        return;
+    }
+
+    // Make computer move
+    if let Some((row, col)) = find_computer_move(&state.board, current_player_type, state.turn) {
+        make_move(&mut state, row, col);
+
+        // Reset timer with random delay (200-800ms)
+        let mut rng = rand::thread_rng();
+        let delay = rng.gen_range(0.2..0.8);
+        timer.timer = Timer::from_seconds(delay, TimerMode::Once);
+    }
+}
+
+fn find_computer_move(
+    board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE],
+    player_type: PlayerType,
+    player: Player,
+) -> Option<(usize, usize)> {
+    match player_type {
+        PlayerType::Human => None,
+        PlayerType::ComputerEasy => find_easy_move(board),
+        PlayerType::ComputerHard => find_hard_move(board, player),
+    }
+}
+
+fn find_easy_move(board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE]) -> Option<(usize, usize)> {
+    let mut empty_cells = Vec::new();
+    for row in 0..BOARD_SIZE {
+        for col in 0..BOARD_SIZE {
+            if board[row][col].is_none() {
+                empty_cells.push((row, col));
+            }
+        }
+    }
+
+    if empty_cells.is_empty() {
+        return None;
+    }
+
+    let mut rng = rand::thread_rng();
+    let idx = rng.gen_range(0..empty_cells.len());
+    Some(empty_cells[idx])
+}
+
+fn find_hard_move(
+    board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE],
+    player: Player,
+) -> Option<(usize, usize)> {
+    // Try to win
+    if let Some(pos) = find_winning_move(board, player) {
+        return Some(pos);
+    }
+
+    // Block opponent from winning
+    if let Some(pos) = find_winning_move(board, player.other()) {
+        return Some(pos);
+    }
+
+    // Take center if available
+    if board[1][1].is_none() {
+        return Some((1, 1));
+    }
+
+    // Take a corner
+    for &(r, c) in &[(0, 0), (0, 2), (2, 0), (2, 2)] {
+        if board[r][c].is_none() {
+            return Some((r, c));
+        }
+    }
+
+    // Take any available position
+    find_easy_move(board)
+}
+
+fn find_winning_move(
+    board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE],
+    player: Player,
+) -> Option<(usize, usize)> {
+    for row in 0..BOARD_SIZE {
+        for col in 0..BOARD_SIZE {
+            if board[row][col].is_none() {
+                let mut test_board = *board;
+                test_board[row][col] = Some(player);
+                if check_winner(&test_board).is_some() {
+                    return Some((row, col));
+                }
+            }
+        }
+    }
+    None
+}
+
+fn make_move(state: &mut GameState, row: usize, col: usize) {
     let player = state.turn;
     state.board[row][col] = Some(player);
     state.moves += 1;
@@ -75,14 +442,219 @@ pub fn handle_clicks(
         state.winner = Some(player);
         state.winning_line = Some(line);
     } else if state.moves == BOARD_SIZE * BOARD_SIZE {
+        // Draw
         state.winner = None;
     } else {
-        state.turn = match state.turn {
-            Player::X => Player::O,
-            Player::O => Player::X,
-        };
+        state.turn = player.other();
     }
 }
+
+// ===== SCORE AND GAME OVER SYSTEMS =====
+
+pub fn update_score(
+    mut score: ResMut<Score>,
+    state: Res<GameState>,
+    mut game_ended: Local<bool>,
+) {
+    if state.is_changed() && (state.winner.is_some() || state.moves == BOARD_SIZE * BOARD_SIZE) {
+        if !*game_ended {
+            *game_ended = true;
+            match state.winner {
+                Some(Player::X) => score.x_wins += 1,
+                Some(Player::O) => score.o_wins += 1,
+                None => score.draws += 1,
+            }
+        }
+    } else if state.moves == 0 {
+        *game_ended = false;
+    }
+}
+
+pub fn show_game_over_ui(
+    mut commands: Commands,
+    state: Res<GameState>,
+    existing: Query<Entity, With<GameOverUI>>,
+) {
+    if !state.is_changed() {
+        return;
+    }
+
+    // Remove existing game over UI
+    for entity in &existing {
+        commands.entity(entity).despawn();
+    }
+
+    // Show game over UI if game ended
+    if state.winner.is_some() || state.moves == BOARD_SIZE * BOARD_SIZE {
+        let message = match state.winner {
+            Some(Player::X) => "Player X Wins!",
+            Some(Player::O) => "Player O Wins!",
+            None => "It's a Draw!",
+        };
+
+        commands
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(0.0),
+                    left: Val::Px(0.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                GameOverUI,
+            ))
+            .with_children(|parent| {
+                parent.spawn((
+                    Text::new(message),
+                    TextFont {
+                        font_size: 50.0,
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                    Node {
+                        margin: UiRect::bottom(Val::Px(20.0)),
+                        ..default()
+                    },
+                ));
+
+                parent
+                    .spawn((
+                        Button,
+                        Node {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                            margin: UiRect::all(Val::Px(10.0)),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.2, 0.6, 0.2)),
+                    ))
+                    .with_children(|parent| {
+                        parent.spawn((
+                            Text::new("New Game (R)"),
+                            TextFont {
+                                font_size: 20.0,
+                                ..default()
+                            },
+                            TextColor(Color::WHITE),
+                        ));
+                    });
+
+                parent
+                    .spawn((
+                        Button,
+                        Node {
+                            width: Val::Px(200.0),
+                            height: Val::Px(50.0),
+                            margin: UiRect::all(Val::Px(10.0)),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgb(0.2, 0.2, 0.6)),
+                        BackToMenuButton,
+                    ))
+                    .with_children(|parent| {
+                        parent.spawn((
+                            Text::new("Back to Menu (Esc)"),
+                            TextFont {
+                                font_size: 20.0,
+                                ..default()
+                            },
+                            TextColor(Color::WHITE),
+                        ));
+                    });
+            });
+    }
+}
+
+pub fn handle_game_over_buttons(
+    mut interaction_query: Query<
+        (&Interaction, Option<&BackToMenuButton>, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut state: ResMut<GameState>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    for (interaction, back_to_menu, mut bg_color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                if back_to_menu.is_some() {
+                    next_state.set(AppState::Menu);
+                } else {
+                    state.reset();
+                }
+            }
+            Interaction::Hovered => {
+                if back_to_menu.is_some() {
+                    *bg_color = BackgroundColor(Color::srgb(0.3, 0.3, 0.7));
+                } else {
+                    *bg_color = BackgroundColor(Color::srgb(0.3, 0.7, 0.3));
+                }
+            }
+            Interaction::None => {
+                if back_to_menu.is_some() {
+                    *bg_color = BackgroundColor(Color::srgb(0.2, 0.2, 0.6));
+                } else {
+                    *bg_color = BackgroundColor(Color::srgb(0.2, 0.6, 0.2));
+                }
+            }
+        }
+    }
+}
+
+pub fn keyboard_controls(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut state: ResMut<GameState>,
+    mut next_state: ResMut<NextState<AppState>>,
+    current_state: Res<State<AppState>>,
+) {
+    if keys.just_pressed(KeyCode::KeyR) {
+        state.reset();
+    }
+
+    if keys.just_pressed(KeyCode::Escape) && *current_state.get() == AppState::Playing {
+        next_state.set(AppState::Menu);
+    }
+}
+
+pub fn cleanup_game(
+    mut commands: Commands,
+    marks: Query<Entity, With<Mark>>,
+    wins: Query<Entity, With<WinHighlight>>,
+    grid: Query<Entity, With<Grid>>,
+    scoreboard: Query<Entity, With<ScoreboardUI>>,
+    game_over: Query<Entity, With<GameOverUI>>,
+    mut state: ResMut<GameState>,
+    mut score: ResMut<Score>,
+) {
+    for e in marks.iter() {
+        commands.entity(e).despawn();
+    }
+    for e in wins.iter() {
+        commands.entity(e).despawn();
+    }
+    for e in grid.iter() {
+        commands.entity(e).despawn();
+    }
+    for e in scoreboard.iter() {
+        commands.entity(e).despawn();
+    }
+    for e in game_over.iter() {
+        commands.entity(e).despawn();
+    }
+
+    state.reset();
+    *score = Score::default();
+}
+
+// ===== RENDERING SYSTEMS =====
+
 
 pub fn draw_marks(
     mut commands: Commands,
@@ -133,27 +705,6 @@ pub fn draw_win_highlight(
             WinHighlight,
         ));
     }
-}
-
-pub fn keyboard_reset(
-    mut commands: Commands,
-    keys: Res<ButtonInput<KeyCode>>,
-    mut state: ResMut<GameState>,
-    mut marks: Query<Entity, With<Mark>>,
-    mut wins: Query<Entity, With<WinHighlight>>,
-) {
-    if !(keys.just_pressed(KeyCode::KeyR) || keys.just_pressed(KeyCode::Escape)) {
-        return;
-    }
-
-    for e in marks.iter_mut() {
-        commands.entity(e).despawn();
-    }
-    for e in wins.iter_mut() {
-        commands.entity(e).despawn();
-    }
-
-    *state = GameState::default();
 }
 
 fn spawn_x(commands: &mut Commands, center: Vec2) {

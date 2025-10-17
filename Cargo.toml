@@ -6,6 +6,7 @@ authors = ["Your Name <you@example.com>"]
 
 [dependencies]
 bevy = { version = "0.17", default-features = true }
+rand = "0.8"
 
 [profile.dev]
 opt-level = 1
