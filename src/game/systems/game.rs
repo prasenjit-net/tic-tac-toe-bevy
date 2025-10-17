@@ -11,7 +11,18 @@ pub fn spawn_grid(mut commands: Commands) {
     let half = board_px / 2.0;
     for i in 1..BOARD_SIZE {
         let offset = i as f32 * CELL_SIZE - half;
-        // vertical line at x = offset
+
+        // Vertical line glow (underneath)
+        commands.spawn((
+            Sprite::from_color(
+                GRID_GLOW,
+                Vec2::new(LINE_THICKNESS + 4.0, board_px + LINE_THICKNESS + 4.0),
+            ),
+            Transform::from_translation(Vec3::new(offset, 0.0, -0.1)),
+            Grid,
+        ));
+
+        // Vertical line main (on top)
         commands.spawn((
             Sprite::from_color(
                 GRID_COLOR,
@@ -20,7 +31,18 @@ pub fn spawn_grid(mut commands: Commands) {
             Transform::from_translation(Vec3::new(offset, 0.0, 0.0)),
             Grid,
         ));
-        // horizontal line at y = offset
+
+        // Horizontal line glow (underneath)
+        commands.spawn((
+            Sprite::from_color(
+                GRID_GLOW,
+                Vec2::new(board_px + LINE_THICKNESS + 4.0, LINE_THICKNESS + 4.0),
+            ),
+            Transform::from_translation(Vec3::new(0.0, offset, -0.1)),
+            Grid,
+        ));
+
+        // Horizontal line main (on top)
         commands.spawn((
             Sprite::from_color(
                 GRID_COLOR,

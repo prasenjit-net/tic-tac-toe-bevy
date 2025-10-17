@@ -18,7 +18,7 @@ pub fn spawn_scoreboard(
                 flex_direction: FlexDirection::Column,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
+            BackgroundColor(UI_BG),
             ScoreboardUI,
         ))
         .with_children(|parent| {
@@ -48,7 +48,7 @@ pub fn spawn_scoreboard(
                     font_size: 14.0,
                     ..default()
                 },
-                TextColor(Color::srgb(0.7, 0.7, 0.7)),
+                TextColor(UI_ACCENT),
                 Node {
                     margin: UiRect::top(Val::Px(10.0)),
                     ..default()
@@ -63,7 +63,7 @@ pub fn spawn_scoreboard(
                     font_size: 16.0,
                     ..default()
                 },
-                TextColor(Color::WHITE),
+                TextColor(UI_ACCENT),
                 Node {
                     margin: UiRect::top(Val::Px(5.0)),
                     ..default()

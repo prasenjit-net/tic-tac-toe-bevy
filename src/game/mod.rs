@@ -19,12 +19,19 @@ impl Plugin for GamePlugin {
             .init_resource::<state::ComputerMoveTimer>()
             .add_systems(Startup, systems::setup_camera)
             // Menu state systems
-            .add_systems(OnEnter(AppState::Menu), systems::spawn_menu)
+            .add_systems(
+                OnEnter(AppState::Menu),
+                (systems::spawn_menu, systems::spawn_logo),
+            )
             .add_systems(
                 Update,
-                systems::handle_menu_buttons.run_if(in_state(AppState::Menu)),
+                (systems::handle_menu_buttons, systems::animate_logo)
+                    .run_if(in_state(AppState::Menu)),
             )
-            .add_systems(OnExit(AppState::Menu), systems::cleanup_menu)
+            .add_systems(
+                OnExit(AppState::Menu),
+                (systems::cleanup_menu, systems::cleanup_logo),
+            )
             // Playing state systems
             .add_systems(
                 OnEnter(AppState::Playing),

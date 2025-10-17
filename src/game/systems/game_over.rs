@@ -87,7 +87,7 @@ pub fn show_game_over_ui(
                         font_size: 50.0,
                         ..default()
                     },
-                    TextColor(Color::WHITE),
+                    TextColor(WIN_COLOR),
                     Node {
                         margin: UiRect::bottom(Val::Px(20.0)),
                         ..default()
@@ -105,7 +105,7 @@ pub fn show_game_over_ui(
                             align_items: AlignItems::Center,
                             ..default()
                         },
-                        BackgroundColor(Color::srgb(0.2, 0.6, 0.2)),
+                        BackgroundColor(UI_BG),
                     ))
                     .with_children(|parent| {
                         parent.spawn((
@@ -114,7 +114,7 @@ pub fn show_game_over_ui(
                                 font_size: 20.0,
                                 ..default()
                             },
-                            TextColor(Color::WHITE),
+                            TextColor(UI_ACCENT),
                         ));
                     });
 
@@ -129,7 +129,7 @@ pub fn show_game_over_ui(
                             align_items: AlignItems::Center,
                             ..default()
                         },
-                        BackgroundColor(Color::srgb(0.2, 0.2, 0.6)),
+                        BackgroundColor(UI_BG),
                         BackToMenuButton,
                     ))
                     .with_children(|parent| {
@@ -139,7 +139,7 @@ pub fn show_game_over_ui(
                                 font_size: 20.0,
                                 ..default()
                             },
-                            TextColor(Color::WHITE),
+                            TextColor(UI_ACCENT),
                         ));
                     });
             });
@@ -161,18 +161,10 @@ pub fn handle_game_over_buttons(
                 }
             }
             Interaction::Hovered => {
-                if back_to_menu.is_some() {
-                    *bg_color = BackgroundColor(Color::srgb(0.3, 0.3, 0.7));
-                } else {
-                    *bg_color = BackgroundColor(Color::srgb(0.3, 0.7, 0.3));
-                }
+                *bg_color = BackgroundColor(UI_BORDER);
             }
             Interaction::None => {
-                if back_to_menu.is_some() {
-                    *bg_color = BackgroundColor(Color::srgb(0.2, 0.2, 0.6));
-                } else {
-                    *bg_color = BackgroundColor(Color::srgb(0.2, 0.6, 0.2));
-                }
+                *bg_color = BackgroundColor(UI_BG);
             }
         }
     }

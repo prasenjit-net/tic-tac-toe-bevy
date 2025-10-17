@@ -30,6 +30,15 @@ pub struct MenuButton {
 #[derive(Component)]
 pub struct BackToMenuButton;
 
+#[derive(Component)]
+pub struct Logo;
+
+#[derive(Component)]
+pub struct LogoAnimation {
+    pub timer: Timer,
+    pub phase: f32,
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PlayerType {
     Human,

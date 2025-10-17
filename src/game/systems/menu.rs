@@ -40,7 +40,7 @@ pub fn spawn_menu(mut commands: Commands) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.8)),
+            BackgroundColor(BG_COLOR),
             MenuUI,
         ))
         .with_children(|parent| {
@@ -50,7 +50,7 @@ pub fn spawn_menu(mut commands: Commands) {
                     font_size: 60.0,
                     ..default()
                 },
-                TextColor(Color::WHITE),
+                TextColor(UI_ACCENT),
                 Node {
                     margin: UiRect::all(Val::Px(30.0)),
                     ..default()
@@ -63,7 +63,7 @@ pub fn spawn_menu(mut commands: Commands) {
                     font_size: 30.0,
                     ..default()
                 },
-                TextColor(Color::WHITE),
+                TextColor(UI_ACCENT),
                 Node {
                     margin: UiRect::bottom(Val::Px(20.0)),
                     ..default()
@@ -75,7 +75,7 @@ pub fn spawn_menu(mut commands: Commands) {
                 .spawn((
                     Button,
                     button_style.clone(),
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    BackgroundColor(UI_BG),
                     MenuButton {
                         x_type: PlayerType::Human,
                         o_type: PlayerType::Human,
@@ -85,7 +85,7 @@ pub fn spawn_menu(mut commands: Commands) {
                     p.spawn((
                         Text::new("Human vs Human"),
                         text_style.clone(),
-                        TextColor(Color::WHITE),
+                        TextColor(UI_ACCENT),
                     ));
                 });
 
@@ -94,7 +94,7 @@ pub fn spawn_menu(mut commands: Commands) {
                 .spawn((
                     Button,
                     button_style.clone(),
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    BackgroundColor(UI_BG),
                     MenuButton {
                         x_type: PlayerType::Human,
                         o_type: PlayerType::ComputerEasy,
@@ -104,7 +104,7 @@ pub fn spawn_menu(mut commands: Commands) {
                     p.spawn((
                         Text::new("Human vs Computer (Easy)"),
                         text_style.clone(),
-                        TextColor(Color::WHITE),
+                        TextColor(UI_ACCENT),
                     ));
                 });
 
@@ -113,7 +113,7 @@ pub fn spawn_menu(mut commands: Commands) {
                 .spawn((
                     Button,
                     button_style.clone(),
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    BackgroundColor(UI_BG),
                     MenuButton {
                         x_type: PlayerType::Human,
                         o_type: PlayerType::ComputerHard,
@@ -123,7 +123,7 @@ pub fn spawn_menu(mut commands: Commands) {
                     p.spawn((
                         Text::new("Human vs Computer (Hard)"),
                         text_style.clone(),
-                        TextColor(Color::WHITE),
+                        TextColor(UI_ACCENT),
                     ));
                 });
 
@@ -132,7 +132,7 @@ pub fn spawn_menu(mut commands: Commands) {
                 .spawn((
                     Button,
                     button_style,
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                    BackgroundColor(UI_BG),
                     MenuButton {
                         x_type: PlayerType::ComputerEasy,
                         o_type: PlayerType::ComputerHard,
@@ -142,7 +142,7 @@ pub fn spawn_menu(mut commands: Commands) {
                     p.spawn((
                         Text::new("Computer vs Computer"),
                         text_style,
-                        TextColor(Color::WHITE),
+                        TextColor(UI_ACCENT),
                     ));
                 });
         });
@@ -161,10 +161,10 @@ pub fn handle_menu_buttons(
                 next_state.set(AppState::Playing);
             }
             Interaction::Hovered => {
-                *bg_color = BackgroundColor(Color::srgb(0.3, 0.3, 0.4));
+                *bg_color = BackgroundColor(UI_BORDER);
             }
             Interaction::None => {
-                *bg_color = BackgroundColor(Color::srgb(0.2, 0.2, 0.3));
+                *bg_color = BackgroundColor(UI_BG);
             }
         }
     }

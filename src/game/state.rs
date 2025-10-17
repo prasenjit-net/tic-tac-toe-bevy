@@ -6,11 +6,25 @@ pub const BOARD_SIZE: usize = 3;
 pub const CELL_SIZE: f32 = 150.0; // world units per cell
 pub const LINE_THICKNESS: f32 = 6.0;
 
-pub const BG_COLOR: Color = Color::srgb(0.09, 0.10, 0.12);
-pub const GRID_COLOR: Color = Color::srgb(0.85, 0.85, 0.85);
-pub const X_COLOR: Color = Color::srgb(0.9, 0.2, 0.2);
-pub const O_COLOR: Color = Color::srgb(0.2, 0.6, 0.95);
-pub const WIN_COLOR: Color = Color::srgb(0.2, 0.95, 0.4);
+// Modern dark theme color palette
+pub const BG_COLOR: Color = Color::srgb(0.04, 0.05, 0.10); // Deep space blue
+pub const GRID_COLOR: Color = Color::srgb(0.31, 0.80, 0.77); // Cyan glow
+pub const GRID_GLOW: Color = Color::srgba(0.31, 0.80, 0.77, 0.15); // Subtle cyan glow
+
+// Player colors with vibrant style
+pub const X_COLOR: Color = Color::srgb(1.0, 0.42, 0.42); // Hot red-orange
+pub const X_GLOW: Color = Color::srgba(1.0, 0.42, 0.42, 0.3); // Red glow
+
+pub const O_COLOR: Color = Color::srgb(0.31, 0.80, 0.77); // Electric cyan
+pub const O_GLOW: Color = Color::srgba(0.31, 0.80, 0.77, 0.3); // Cyan glow
+
+pub const WIN_COLOR: Color = Color::srgb(1.0, 0.85, 0.24); // Golden yellow
+pub const WIN_GLOW: Color = Color::srgba(1.0, 0.85, 0.24, 0.5); // Gold pulse
+
+// UI colors for glass morphism
+pub const UI_BG: Color = Color::srgba(0.10, 0.12, 0.18, 0.85); // Glass background
+pub const UI_BORDER: Color = Color::srgba(0.31, 0.80, 0.77, 0.4); // Cyan border
+pub const UI_ACCENT: Color = Color::srgb(0.44, 1.0, 0.91); // Bright cyan
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
 pub enum Player {

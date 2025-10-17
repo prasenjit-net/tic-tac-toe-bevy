@@ -48,6 +48,19 @@ pub fn draw_win_highlight(
         let length = dir.length() + CELL_SIZE * 0.6;
         let angle = dir.y.atan2(dir.x);
         let mid = (start_center + end_center) * 0.5;
+
+        // Glow layer (underneath)
+        commands.spawn((
+            Sprite::from_color(
+                WIN_GLOW,
+                Vec2::new(length + 8.0, LINE_THICKNESS * 2.0 + 8.0),
+            ),
+            Transform::from_translation(Vec3::new(mid.x, mid.y, 0.9))
+                .with_rotation(Quat::from_rotation_z(angle)),
+            WinHighlight,
+        ));
+
+        // Main win line (on top)
         commands.spawn((
             Sprite::from_color(WIN_COLOR, Vec2::new(length, LINE_THICKNESS * 2.0)),
             Transform::from_translation(Vec3::new(mid.x, mid.y, 1.0))
@@ -67,6 +80,16 @@ fn spawn_x(
     let thickness = LINE_THICKNESS * 1.5;
     let z = 0.5;
     for angle in [45f32.to_radians(), -45f32.to_radians()] {
+        // Glow layer (underneath)
+        commands.spawn((
+            Mark,
+            Mesh2d(meshes.add(Rectangle::new(len + 8.0, thickness + 8.0))),
+            MeshMaterial2d(materials.add(ColorMaterial::from_color(X_GLOW))),
+            Transform::from_translation(Vec3::new(center.x, center.y, z - 0.1))
+                .with_rotation(Quat::from_rotation_z(angle)),
+        ));
+
+        // Main X line (on top)
         commands.spawn((
             Mark,
             Mesh2d(meshes.add(Rectangle::new(len, thickness))),
@@ -86,6 +109,14 @@ fn spawn_o(
     let radius = CELL_SIZE * 0.3;
     let thickness = LINE_THICKNESS * 1.5;
     let z = 0.5;
+
+    // Glow layer (underneath)
+    commands.spawn((
+        Mark,
+        Mesh2d(meshes.add(Circle::new(radius + 4.0))),
+        MeshMaterial2d(materials.add(ColorMaterial::from_color(O_GLOW))),
+        Transform::from_translation(Vec3::new(center.x, center.y, z - 0.1)),
+    ));
 
     // Outer circle
     commands.spawn((
