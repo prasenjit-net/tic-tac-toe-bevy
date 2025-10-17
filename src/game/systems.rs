@@ -682,13 +682,15 @@ pub fn cleanup_game(
 
 pub fn draw_marks(
     mut commands: Commands,
-    mut marks: Query<(Entity, &mut Sprite, &mut Transform), With<Mark>>,
+    marks: Query<Entity, With<Mark>>,
     state: Res<GameState>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     if !state.is_changed() {
         return;
     }
-    for (e, _, _) in marks.iter_mut() {
+    for e in marks.iter() {
         commands.entity(e).despawn();
     }
 
@@ -697,8 +699,8 @@ pub fn draw_marks(
             if let Some(player) = state.board[row][col] {
                 let center = cell_center(row, col);
                 match player {
-                    Player::X => spawn_x(&mut commands, center),
-                    Player::O => spawn_o(&mut commands, center),
+                    Player::X => spawn_x(&mut commands, center, &mut meshes, &mut materials),
+                    Player::O => spawn_o(&mut commands, center, &mut meshes, &mut materials),
                 }
             }
         }
@@ -731,32 +733,39 @@ pub fn draw_win_highlight(
     }
 }
 
-fn spawn_x(commands: &mut Commands, center: Vec2) {
+fn spawn_x(commands: &mut Commands, center: Vec2, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>) {
     let len = CELL_SIZE * 0.6;
     let thickness = LINE_THICKNESS * 1.5;
     let z = 0.5;
     for angle in [45f32.to_radians(), -45f32.to_radians()] {
         commands.spawn((
             Mark,
-            Sprite::from_color(X_COLOR, Vec2::new(len, thickness)),
+            Mesh2d(meshes.add(Rectangle::new(len, thickness))),
+            MeshMaterial2d(materials.add(ColorMaterial::from_color(X_COLOR))),
             Transform::from_translation(Vec3::new(center.x, center.y, z))
                 .with_rotation(Quat::from_rotation_z(angle)),
         ));
     }
 }
 
-fn spawn_o(commands: &mut Commands, center: Vec2) {
-    let outer = CELL_SIZE * 0.6;
+fn spawn_o(commands: &mut Commands, center: Vec2, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>) {
+    let radius = CELL_SIZE * 0.3;
     let thickness = LINE_THICKNESS * 1.5;
     let z = 0.5;
+    
+    // Outer circle
     commands.spawn((
         Mark,
-        Sprite::from_color(O_COLOR, Vec2::new(outer, outer)),
+        Mesh2d(meshes.add(Circle::new(radius))),
+        MeshMaterial2d(materials.add(ColorMaterial::from_color(O_COLOR))),
         Transform::from_translation(Vec3::new(center.x, center.y, z)),
     ));
+    
+    // Inner circle (background color to create ring effect)
     commands.spawn((
         Mark,
-        Sprite::from_color(BG_COLOR, Vec2::new(outer - thickness, outer - thickness)),
+        Mesh2d(meshes.add(Circle::new(radius - thickness))),
+        MeshMaterial2d(materials.add(ColorMaterial::from_color(BG_COLOR))),
         Transform::from_translation(Vec3::new(center.x, center.y, z + 0.01)),
     ));
 }
