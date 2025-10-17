@@ -5,6 +5,42 @@ use super::components::*;
 use super::state::*;
 use super::utils::*;
 
+// Type aliases to reduce complexity
+type MenuButtonQuery<'w, 's> = Query<
+    'w,
+    's,
+    (
+        &'static Interaction,
+        &'static MenuButton,
+        &'static mut BackgroundColor,
+    ),
+    (Changed<Interaction>, With<Button>),
+>;
+
+type GameOverButtonQuery<'w, 's> = Query<
+    'w,
+    's,
+    (
+        &'static Interaction,
+        Option<&'static BackToMenuButton>,
+        &'static mut BackgroundColor,
+    ),
+    (Changed<Interaction>, With<Button>),
+>;
+
+type CleanupEntitiesQuery<'w, 's> = Query<
+    'w,
+    's,
+    Entity,
+    Or<(
+        With<Mark>,
+        With<WinHighlight>,
+        With<Grid>,
+        With<ScoreboardUI>,
+        With<GameOverUI>,
+    )>,
+>;
+
 pub fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
@@ -145,10 +181,7 @@ pub fn spawn_menu(mut commands: Commands) {
 }
 
 pub fn handle_menu_buttons(
-    mut interaction_query: Query<
-        (&Interaction, &MenuButton, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut interaction_query: MenuButtonQuery,
     mut player_config: ResMut<PlayerConfig>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
@@ -177,7 +210,11 @@ pub fn cleanup_menu(mut commands: Commands, query: Query<Entity, With<MenuUI>>) 
 
 // ===== SCOREBOARD SYSTEMS =====
 
-pub fn spawn_scoreboard(mut commands: Commands, player_config: Res<PlayerConfig>, score: Res<Score>) {
+pub fn spawn_scoreboard(
+    mut commands: Commands,
+    player_config: Res<PlayerConfig>,
+    score: Res<Score>,
+) {
     commands
         .spawn((
             Node {
@@ -392,9 +429,9 @@ fn find_computer_move(
 
 fn find_easy_move(board: &[[Option<Player>; BOARD_SIZE]; BOARD_SIZE]) -> Option<(usize, usize)> {
     let mut empty_cells = Vec::new();
-    for row in 0..BOARD_SIZE {
-        for col in 0..BOARD_SIZE {
-            if board[row][col].is_none() {
+    for (row, row_data) in board.iter().enumerate() {
+        for (col, cell) in row_data.iter().enumerate() {
+            if cell.is_none() {
                 empty_cells.push((row, col));
             }
         }
@@ -475,11 +512,7 @@ fn make_move(state: &mut GameState, row: usize, col: usize) {
 
 // ===== SCORE AND GAME OVER SYSTEMS =====
 
-pub fn update_score(
-    mut score: ResMut<Score>,
-    state: Res<GameState>,
-    mut game_ended: Local<bool>,
-) {
+pub fn update_score(mut score: ResMut<Score>, state: Res<GameState>, mut game_ended: Local<bool>) {
     if state.is_changed() && (state.winner.is_some() || state.moves == BOARD_SIZE * BOARD_SIZE) {
         if !*game_ended {
             *game_ended = true;
@@ -598,10 +631,7 @@ pub fn show_game_over_ui(
 }
 
 pub fn handle_game_over_buttons(
-    mut interaction_query: Query<
-        (&Interaction, Option<&BackToMenuButton>, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>),
-    >,
+    mut interaction_query: GameOverButtonQuery,
     mut state: ResMut<GameState>,
     mut next_state: ResMut<NextState<AppState>>,
 ) {
@@ -649,27 +679,11 @@ pub fn keyboard_controls(
 
 pub fn cleanup_game(
     mut commands: Commands,
-    marks: Query<Entity, With<Mark>>,
-    wins: Query<Entity, With<WinHighlight>>,
-    grid: Query<Entity, With<Grid>>,
-    scoreboard: Query<Entity, With<ScoreboardUI>>,
-    game_over: Query<Entity, With<GameOverUI>>,
+    entities: CleanupEntitiesQuery,
     mut state: ResMut<GameState>,
     mut score: ResMut<Score>,
 ) {
-    for e in marks.iter() {
-        commands.entity(e).despawn();
-    }
-    for e in wins.iter() {
-        commands.entity(e).despawn();
-    }
-    for e in grid.iter() {
-        commands.entity(e).despawn();
-    }
-    for e in scoreboard.iter() {
-        commands.entity(e).despawn();
-    }
-    for e in game_over.iter() {
+    for e in entities.iter() {
         commands.entity(e).despawn();
     }
 
@@ -678,7 +692,6 @@ pub fn cleanup_game(
 }
 
 // ===== RENDERING SYSTEMS =====
-
 
 pub fn draw_marks(
     mut commands: Commands,
@@ -733,7 +746,12 @@ pub fn draw_win_highlight(
     }
 }
 
-fn spawn_x(commands: &mut Commands, center: Vec2, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>) {
+fn spawn_x(
+    commands: &mut Commands,
+    center: Vec2,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
     let len = CELL_SIZE * 0.6;
     let thickness = LINE_THICKNESS * 1.5;
     let z = 0.5;
@@ -748,11 +766,16 @@ fn spawn_x(commands: &mut Commands, center: Vec2, meshes: &mut ResMut<Assets<Mes
     }
 }
 
-fn spawn_o(commands: &mut Commands, center: Vec2, meshes: &mut ResMut<Assets<Mesh>>, materials: &mut ResMut<Assets<ColorMaterial>>) {
+fn spawn_o(
+    commands: &mut Commands,
+    center: Vec2,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+) {
     let radius = CELL_SIZE * 0.3;
     let thickness = LINE_THICKNESS * 1.5;
     let z = 0.5;
-    
+
     // Outer circle
     commands.spawn((
         Mark,
@@ -760,7 +783,7 @@ fn spawn_o(commands: &mut Commands, center: Vec2, meshes: &mut ResMut<Assets<Mes
         MeshMaterial2d(materials.add(ColorMaterial::from_color(O_COLOR))),
         Transform::from_translation(Vec3::new(center.x, center.y, z)),
     ));
-    
+
     // Inner circle (background color to create ring effect)
     commands.spawn((
         Mark,
